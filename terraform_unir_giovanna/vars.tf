@@ -1,9 +1,7 @@
-#--------------------------------------------------------------------------
-# Autor: Giovanna Leon Granda
-# Este archivo contiene todas las variables que se utilizarán en los otros archivos. 
-# Las variables permiten personalizar y reutilizar el código, como los nombres de la 
-# suscripción, el grupo de recursos, las credenciales de la máquina virtual, etc.
-#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------  
+# Autor: Giovanna Leon Granda 
+# Define las variables que se utilizarán en los otros archivos.
+#----------------------------------------------------------------------
 
 variable "subscription_id" {
   description = "ID de la suscripción de Azure"
@@ -17,14 +15,15 @@ variable "resource_group_name" {
 }
 
 variable "location" {
-type = string
-description = "Azure region where infrastructure will be created"
-default = "Spain Central"
+  type        = string
+  description = "Azure region where infrastructure will be created"
+  default     = "Spain Central"
 }
+
 variable "vm_size" {
-type = string
-description = "VM size"
-default = "Standard_D1_v2"
+  type        = string
+  description = "VM size"
+  default     = "Standard_D1_v2"
 }
 
 variable "vnet_name" {
@@ -39,13 +38,13 @@ variable "subnet_name" {
 
 variable "vm_username" {
   description = "Nombre de usuario para la máquina virtual"
-  default     = "azureuser"
+  default     = "ubuntu_user"
 }
 
 variable "vm_password" {
   description = "Contraseña para la máquina virtual"
   type        = string
-  default     = "MiContrasenaSegura123!"  # Valor por defecto
+  default     = "MiContrasenaSegura123!"
   sensitive   = true
 }
 
@@ -56,7 +55,11 @@ variable "aks_name" {
 
 variable "node_pool_size" {
   description = "Tamaño de los nodos en el clúster de AKS"
-  default     = "Standard_B2s"  # Tamaño adecuado para AKS
+  default     = "Standard_B2s"
 }
 
-
+variable "acr_name" {
+  description = "Nombre del Azure Container Registry"
+  type        = string
+  default     = "myacr01"  # Nombre básico por defecto
+}

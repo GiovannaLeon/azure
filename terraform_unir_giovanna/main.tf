@@ -1,8 +1,9 @@
-#--------------------------------------------------------------------------
-# Autor: Giovanna Leon Granda
-# Contiene la configuración de Terraform: Proveedor y version
-# Aquí se define el proveedor de Azure (azurerm) y cualquier otra configuración global, en este caso el id de la subscripción
-# Este fichero hace uso del fichero var.tf
+#-------------------------------------------------------------------------- 
+# Autor: Giovanna Leon granda / maint.tf
+# Este archivo configura Terraform para usar el proveedor de Azure (azurerm).
+# Define la versión mínima de Terraform como 1.1.0 y especifica la versión 
+# del proveedor de Azure (4.19.0 o compatible).
+# Configura la conexión a Azure usando un subscription_id obtenido de una variable.
 #--------------------------------------------------------------------------
 
 terraform {
