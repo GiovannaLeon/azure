@@ -1,0 +1,16 @@
+[webservers]
+68.221.201.179 ansible_user=ubuntu_user ansible_ssh_private_key_file=~/ubuntukeys.pem
+
+[webservers:vars]
+# Definir el grupo de recursos en las variables
+my_resource_group="myResourceGroup"
+my_ip="68.221.201.179"
+acr_username="myacr01"
+acr_password="ssLjXqf7Glftf8+axMHrw7qnafYNPu+hxmhKs2A84V+ACRBtgwYa"
+
+[localhost]
+localhost ansible_python_interpreter=/usr/bin/python3
+localhost ansible_connection=local
+
+[localhost:vars]
+acr_name="myacr01"
