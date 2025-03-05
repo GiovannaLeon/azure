@@ -1,0 +1,54 @@
+# ---------------------------------------------------------------------
+# Author: Giovanna Leon Granda
+#----------------------------------------------------------------------
+# Este archivo de Ansible instala Podman en una máquina virtual.
+-----------------------------------------------------------------------
+# Los pasos que realiza son los siguientes:
+# 1. Instalar las dependencias necesarias como curl, gnupg, etc.
+# 2. Añadir el repositorio oficial de Podman para Ubuntu.
+# 3. Añadir la clave del repositorio para que Podman pueda ser instalado de forma segura.
+# 4. Instalar Podman desde el repositorio.
+# 5. Verificar que la instalación de Podman fue exitosa.
+# 6. Mostrar la versión instalada de Podman.
+#
+#
+# Este playbook asume que la máquina virtual tiene acceso a Internet
+# y que se está utilizando una distribución de Ubuntu.
+# ----------------------------------------------------------------------
+
+- name: Instalar Podman en la VM
+  hosts: all
+  become: true
+  tasks:
+    - name: Instalar dependencias para Podman (Ubuntu)
+      apt:
+        name:
+          - software-properties-common
+          - apt-transport-https
+          - ca-certificates
+        state: present
+        update_cache: yes
+
+    - name: Agregar el repositorio oficial de Podman
+      apt_repository:
+        repo: "deb https://packages.podman.io/debian/ {{ ansible_distribution_release | lower }} main"
+        state: present
+        update_cache: yes
+
+    - name: Agregar la clave GPG del repositorio
+      apt_key:
+        url: "https://packages.podman.io/podman.gpg"
+        state: present
+
+    - name: Instalar Podman
+      apt:
+        name: podman
+        state: latest
+
+    - name: Verificar que Podman se instaló correctamente
+      command: podman --version
+      register: result
+
+    - name: Mostrar versión de Podman
+      debug:
+        msg: "Podman versión: {{ result.stdout }}"

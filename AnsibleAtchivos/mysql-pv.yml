@@ -1,0 +1,26 @@
+#  mysql-pv.yml
+# Autor: Giovanna Leon 
+# ============================================
+# PersistentVolume (PV) para MySQL
+# ============================================
+# Este YAML crea un PersistentVolume de 5Gi para almacenar
+# los datos persistentes de MySQL en el nodo.
+# El volumen tiene acceso "ReadWriteOnce" y los datos no
+# se eliminarán al eliminar el PVC asociado, gracias a la 
+# política de retención "Retain".
+# El volumen se monta en el directorio "/mnt/data/mysql" del nodo.
+# ============================================
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mysql-pv
+spec:
+  capacity:
+    storage: 5Gi  # El tamaño del volumen persistente
+  accessModes:
+    - ReadWriteOnce  # El volumen solo será montado en un nodo a la vez
+  persistentVolumeReclaimPolicy: Retain  # Los datos no se eliminarán al eliminar el PVC
+  storageClassName: default
+  hostPath:
+    path: /mnt/data/mysql  # El camino donde se almacenarán los datos de MySQL en el nodo

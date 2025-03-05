@@ -1,0 +1,21 @@
+# mysql-pvc.yml
+# Autor: Giovanna Leon 
+# ============================================
+# PersistentVolumeClaim (PVC) para MySQL
+# ============================================
+# Este YAML crea un PersistentVolumeClaim (PVC) para solicitar
+# almacenamiento de 5Gi para la aplicación MySQL.
+# El volumen tendrá acceso "ReadWriteOnce" y usará la clase
+# de almacenamiento "default".
+# ============================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi  # El tamaño de almacenamiento solicitado
+  storageClassName: default

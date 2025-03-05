@@ -1,0 +1,31 @@
+#-------------------------------------------
+# Autor: Giovanna Leon 
+#-------------------------------------------
+# Playbook para empujar las imágenes de WordPress y MySQL a ACR usando Podman
+# 1. Iniciar sesión en ACR.
+# 2. Empujar las imágenes etiquetadas a ACR.
+
+- name: Subir las imágenes de WordPress y MySQL a ACR en la máquina virtual usando Podman
+  hosts: webservers  # El playbook se ejecuta en las máquinas virtuales (webservers)
+  become: true  # Usar permisos de sudo para ejecutar los comandos de Podman
+  tasks:
+    # Tarea 1: Iniciar sesión en ACR usando Podman
+    - name: Iniciar sesión en ACR con Podman
+      community.general.podman_login:
+        username: "{{ acr_username }}"  # Usuario para iniciar sesión en ACR
+        password: "{{ acr_password }}"  # Contraseña para iniciar sesión en ACR
+        login_server: "{{ acr_name }}.azurecr.io"  # Dirección de tu Azure Container Registry
+
+    # Tarea 2: Empujar la imagen de WordPress a ACR usando Podman
+    - name: Empujar la imagen de WordPress a ACR usando Podman
+      community.general.podman_image:
+        name: "{{ acr_name }}.azurecr.io/wordpress:casopractico2"  # Nombre completo de la imagen con el tag 'casopractico2'
+        source: local  # Usamos la imagen local que ya está etiquetada
+        push: yes  # El parámetro 'push' indica que debe empujar la imagen a ACR
+
+    # Tarea 3: Empujar la imagen de MySQL a ACR usando Podman
+    - name: Empujar la imagen de MySQL a ACR usando Podman
+      community.general.podman_image:
+        name: "{{ acr_name }}.azurecr.io/mysql:casopractico2"  # Nombre completo de la imagen de MySQL con el tag 'casopractico2'
+        source: local  # Usamos la imagen local que ya está etiquetada
+        push: yes  # El parámetro 'push' indica que debe empujar la imagen a ACR

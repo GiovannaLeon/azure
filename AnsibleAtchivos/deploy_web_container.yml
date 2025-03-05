@@ -1,0 +1,68 @@
+# --------------------------------------------------------------
+# Author: Giovanna Leon Granda
+# --------------------------------------------------------------
+# Playbook de Ansible para desplegar un contenedor Nginx con Podman
+# en una máquina virtual, descargando la imagen desde Azure Container
+# Registry (ACR) y configurando autenticación básica.
+# --------------------------------------------------------------
+#
+# Este playbook realiza los siguientes pasos:
+# 1. **Descargar la imagen de Nginx desde ACR**: Se descarga la imagen de Nginx desde el registro privado de ACR.
+# 2. **Verificar la descarga**: Si la imagen no se descarga correctamente, se genera un error.
+# 3. **Crear el archivo `.htpasswd`**: Se crea el archivo de autenticación básica para Nginx en la máquina virtual.
+# 4. **Desplegar el contenedor de Nginx**: Se crea un contenedor de Nginx con SSL y autenticación básica, configurando los puertos 80 y 443.
+#
+# Requisitos previos:
+# - Acceso al ACR de Azure para descargar la imagen.
+# - Podman instalado en la máquina virtual.
+# - Configuración para permitir la autenticación básica en Nginx.
+#
+# --------------------------------------------------------------
+
+- name: Desplegar contenedor con Podman
+  hosts: all
+  become: true
+  tasks:
+
+    # Descargar la imagen de Nginx desde ACR (Azure Container Registry)
+    - name: Descargar la imagen de Nginx desde ACR
+      community.general.podman_image:
+        name: miacr.azurecr.io/nginx:latest
+        state: present
+      register: pull_nginx
+      ignore_errors: yes  # Si hay un error de descarga, se continuará con el siguiente paso
+
+    # Verificar si la imagen de Nginx fue descargada correctamente
+    - name: Verificar si la imagen de Nginx fue descargada correctamente
+      fail:
+        msg: "La imagen de Nginx no se pudo descargar correctamente."
+      when: pull_nginx.failed
+
+    # Taguear la imagen descargada como 'casopractico2'
+    - name: Taguear la imagen de Nginx como 'casopractico2'
+      community.general.podman_image:
+        name: "miacr.azurecr.io/nginx:casopractico2"
+        source: "miacr.azurecr.io/nginx:latest"
+        state: present
+
+    # Crear el archivo .htpasswd para autenticación básica
+    - name: Crear el archivo .htpasswd para autenticación básica
+      lineinfile:
+        path: /etc/nginx/.htpasswd
+        line: "usuario:{{ 'mi_contraseña' | password_hash('sha512') }}"
+        create: yes
+      become: true
+
+    # Crear un contenedor con Nginx y un certificado SSL autofirmado
+    - name: Crear un contenedor con Nginx y un certificado SSL autofirmado
+      community.general.podman_container:
+        name: nginx_container
+        image: miacr.azurecr.io/nginx:casopractico2  # Usar el nuevo tag 'casopractico2'
+        state: started
+        ports:
+          - "80:80"
+          - "443:443"
+        volumes:
+          - /etc/nginx/certificates:/etc/ssl/certs
+          - /etc/nginx/.htpasswd:/etc/nginx/.htpasswd
+        restart_policy: always

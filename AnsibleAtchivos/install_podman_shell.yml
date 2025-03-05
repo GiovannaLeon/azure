@@ -1,0 +1,124 @@
+# --------------------------------------------------------------
+# Author: Giovanna Leon Granda
+#----------------------------------------------------------------------
+# Playbook de Ansible para instalar Podman, manejar imágenes de contenedor
+# y ejecutar contenedores en una máquina virtual.
+# --------------------------------------------------------------
+#
+# Este playbook automatiza todo el proceso relacionado con Podman:
+# 1. **Descargar una imagen de contenedor**: Se descarga la imagen de contenedor especificada (en este caso, "alpine")
+#    desde el repositorio de contenedores usando Podman en el host local.
+#
+# 2. **Exportar la imagen a un archivo `.tar` en formato OCI**: Después de descargar la imagen, se exporta a un archivo `.tar`
+#    utilizando el formato OCI (Open Container Initiative), lo cual permite transferir la imagen a la máquina virtual.
+#
+# 3. **Verificación de la exportación de la imagen**: Se verifica que el archivo `.tar` con la imagen haya sido exportado
+#    correctamente en el host local antes de proceder con la transferencia a la máquina virtual.
+#
+# 4. **Crear el directorio de destino en la máquina virtual**: Se asegura que el directorio de destino donde se almacenará
+#    la imagen en la máquina virtual exista. Si no existe, se crea automáticamente con los permisos adecuados.
+#
+# 5. **Instalar Podman en la máquina virtual**: Si Podman no está instalado en la máquina virtual, el playbook se encarga
+#    de instalarlo utilizando el gestor de paquetes adecuado para la máquina virtual.
+#
+# 6. **Transferir la imagen a la máquina virtual**: Una vez que la imagen ha sido exportada y verificada en el host local,
+#    se transfiere a la máquina virtual a la ruta especificada en el playbook.
+#
+# 7. **Cargar la imagen en Podman dentro de la máquina virtual**: Después de transferir la imagen, se carga en Podman en
+#    la máquina virtual, haciendo que esté disponible para crear y ejecutar contenedores.
+#
+# 8. **Ejecutar el contenedor en la máquina virtual**: Utilizando Podman, el playbook ejecuta un contenedor basado en la
+#    imagen descargada (en este caso, "alpine") con la shell interactiva `/bin/sh`, lo que permite realizar operaciones dentro
+#    del contenedor.
+#
+# 9. **Verificar que el contenedor se está ejecutando**: Después de ejecutar el contenedor, se verifica si el contenedor
+#    se está ejecutando correctamente en la máquina virtual, mostrando un mensaje con la salida del contenedor.
+#
+# **Variables definidas en el playbook**:
+# - `imagen`: El nombre de la imagen de contenedor que se descargará y ejecutará (en este caso, "alpine").
+# - `archivo_imagen`: La ruta donde se guardará la imagen descargada en el host local.
+# - `vm_usuario`: El nombre de usuario en la máquina virtual donde se almacenará la imagen.
+# - `vm_ip`: La dirección IP de la máquina virtual a la que se conectará Ansible.
+# - `destino_imagen_vm`: La ruta en la máquina virtual donde se almacenará la imagen transferida.
+#
+# **Requisitos previos**:
+# - La máquina virtual debe tener acceso a Internet.
+# - La máquina virtual debe tener permisos de **root** para realizar tareas de instalación y carga de imágenes.
+# - El host local debe tener Podman instalado y configurado correctamente.
+# - Ansible debe estar configurado y ejecutándose en el host local con acceso a la máquina virtual.
+#
+# --------------------------------------------------------------
+- name: Instalar Podman y manejar imágenes en la VM
+  hosts: localhost
+  become: yes
+  vars:
+    imagen: "alpine"  # Sin ":latest" al usar podman save
+    archivo_imagen: "/tmp/alpine.tar"  # Ruta donde guardarás la imagen en tu PC local
+    vm_usuario: "user"  # Nombre de usuario de la máquina virtual
+    vm_ip: "68.221.202.66"  # Dirección IP de la máquina virtual
+    destino_imagen_vm: "/home/{{ vm_usuario }}/alpine.tar"  # Ruta donde guardarás la imagen en la VM
+
+  tasks:
+    - name: Descargar la imagen de Podman en el PC local
+      become: yes
+      shell: podman pull {{ imagen }}
+      register: resultado_descarga
+      failed_when: resultado_descarga.rc != 0
+
+    - name: Exportar la imagen a un archivo .tar en formato OCI
+      become: yes
+      shell: podman save --format oci-archive -o {{ archivo_imagen }} {{ imagen }}
+      register: resultado_exportacion
+      failed_when: resultado_exportacion.rc != 0
+
+    - name: Verificar que la imagen fue exportada correctamente
+      become: yes
+      stat:
+        path: "{{ archivo_imagen }}"
+      register: resultado_stat
+      failed_when: resultado_stat.stat.exists == false
+
+    # Asegurarse de que el directorio de destino existe en la VM
+    - name: Crear el directorio de destino en la máquina virtual
+      become: yes
+      file:
+        path: "/home/{{ vm_usuario }}"
+        state: directory
+        mode: '0755'
+      delegate_to: "{{ vm_ip }}"
+
+    # Instalar Podman en la máquina virtual si no está instalado
+    - name: Instalar Podman en la máquina virtual
+      become: yes
+      package:
+        name: podman
+        state: present
+      delegate_to: "{{ vm_ip }}"
+
+    - name: Transferir la imagen a la máquina virtual
+      become: yes
+      ansible.builtin.copy:
+        src: "{{ archivo_imagen }}"
+        dest: "{{ destino_imagen_vm }}"
+      delegate_to: "{{ vm_ip }}"
+      become_user: root  # Asegurarse de que se ejecute con permisos de root en la VM
+
+    - name: Cargar la imagen en Podman en la máquina virtual
+      become: yes
+      shell: podman load -i {{ destino_imagen_vm }}
+      delegate_to: "{{ vm_ip }}"
+      become_user: root  # Asegurarse de que se ejecute con permisos de root en la VM
+      register: resultado_carga_imagen
+      failed_when: resultado_carga_imagen.rc != 0
+
+    - name: Ejecutar el contenedor en la máquina virtual
+      become: yes
+      shell: podman run -it {{ imagen }} /bin/sh
+      delegate_to: "{{ vm_ip }}"
+      become_user: root  # Asegurarse de que se ejecute con permisos de root en la VM
+      register: resultado_ejecucion_contenedor
+      failed_when: resultado_ejecucion_contenedor.rc != 0
+
+    - name: Verificar que el contenedor se está ejecutando
+      debug:
+        msg: "Contenedor ejecutándose: {{ resultado_ejecucion_contenedor.stdout }}"

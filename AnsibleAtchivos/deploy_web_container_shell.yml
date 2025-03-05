@@ -1,0 +1,68 @@
+# --------------------------------------------------------------
+# Author: Giovanna Leon Granda
+#----------------------------------------------------------------------
+# Playbook de Ansible para desplegar un contenedor de Nginx en una
+# máquina virtual utilizando Podman. El playbook realiza las siguientes
+# acciones para configurar el contenedor Nginx en la VM:
+# --------------------------------------------------------------
+#
+# 1. **Copiar la imagen de Nginx a la máquina virtual**:
+#    El playbook copia un archivo de imagen de Nginx (nginx_image.tar) desde
+#    el directorio local al directorio temporal en la máquina virtual.
+#
+# 2. **Cargar la imagen en Podman**:
+#    Una vez que la imagen está en la VM, se carga en Podman para que esté
+#    disponible para crear contenedores.
+#
+# 3. **Ejecutar el contenedor de Nginx**:
+#    El playbook ejecuta un contenedor de Nginx utilizando la imagen cargada,
+#    asignando el puerto 80 del contenedor al puerto 80 de la máquina virtual.
+#
+# 4. **Verificar que el contenedor esté en ejecución**:
+#    Se ejecuta un comando para verificar que el contenedor de Nginx se esté
+#    ejecutando correctamente en la VM.
+#
+# 5. **Mostrar el estado del contenedor**:
+#    El playbook muestra el estado del contenedor Nginx, confirmando si está
+#    en ejecución correctamente.
+#
+# **Requisitos previos**:
+# - El archivo de imagen `nginx_image.tar` debe estar disponible en el host local.
+# - Podman debe estar instalado en la máquina virtual.
+# - La máquina virtual debe ser accesible desde el host local.
+#
+# --------------------------------------------------------------
+
+---
+- name: Deploy Nginx Container on Virtual Machine
+  hosts: all
+  become: yes
+  tasks:
+
+    # Paso 1: Copiar el archivo de imagen al directorio temporal en la VM
+    - name: Copy nginx image to the VM
+      copy:
+        src: /home/ubuntu_user/nginx_image.tar  # Ruta local del archivo
+        dest: /tmp/nginx_image.tar             # Ruta de destino en la VM
+
+    # Paso 2: Cargar la imagen en Podman en la VM
+    - name: Load nginx image on the VM
+      command: podman load -i /tmp/nginx_image.tar
+      delegate_to: "{{ inventory_hostname }}"  # Ejecutar el comando en la VM
+
+    # Paso 3: Ejecutar el contenedor Nginx en la VM
+    - name: Run nginx container on VM
+      command: podman run -d --name nginx -p 80:80 nginx:latest
+      delegate_to: "{{ inventory_hostname }}"  # Ejecutar el contenedor en la VM
+
+    # Paso 4: Verificar que el contenedor está en ejecución
+    - name: Check if Nginx container is running
+      command: podman ps
+      delegate_to: "{{ inventory_hostname }}"
+      register: result
+      failed_when: result.rc != 0
+
+    # Paso 5: Mostrar el estado del contenedor
+    - name: Show the Nginx container status
+      debug:
+        msg: "Nginx container is running: {{ result.stdout }}"

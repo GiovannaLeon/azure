@@ -1,0 +1,34 @@
+---
+# Playbook para descargar las imágenes de WordPress y MySQL desde Docker Hub a la máquina local
+# 1. Descargar las imágenes de WordPress y MySQL desde Docker Hub.
+# 2. Etiquetar las imágenes con el tag 'casopractico2'.
+# 3. Preparar las imágenes para ser empujadas al Azure Container Registry (ACR).
+
+- name: Descargar las imágenes de WordPress y MySQL en la máquina local usando Docker
+  hosts: localhost  # Esto indica que el playbook se ejecuta en la máquina local
+  become: true  # Usar permisos de sudo para ejecutar los comandos de Docker
+  tasks:
+    # Tarea 1: Descargar la imagen de WordPress desde Docker Hub
+    - name: Descargar la imagen de WordPress usando Docker
+      community.general.docker_image:
+        name: wordpress  # Nombre de la imagen de WordPress en Docker Hub
+        source: pull  # Acción de descargar (pull) la imagen desde Docker Hub
+
+    # Tarea 2: Descargar la imagen de MySQL desde Docker Hub
+    - name: Descargar la imagen de MySQL usando Docker
+      community.general.docker_image:
+        name: mysql  # Nombre de la imagen de MySQL en Docker Hub
+        source: pull  # Acción de descargar (pull) la imagen desde Docker Hub
+
+    # Tarea 3: Etiquetar la imagen de WordPress con el tag 'casopractico2'
+    - name: Etiquetar imagen de WordPress con tag 'casopractico2'
+      command:
+        cmd: docker tag wordpress "{{ acr_name }}.azurecr.io/wordpress:casopractico2"
+        # El comando 'docker tag' crea una nueva etiqueta para la imagen de WordPress.
+        # Se utiliza la variable acr_name (el nombre de tu Azure Container Registry) y se aplica el tag 'casopractico2'.
+
+    # Tarea 4: Etiquetar la imagen de MySQL con el tag 'casopractico2'
+    - name: Etiquetar imagen de MySQL con tag 'casopractico2'
+      command:
+        cmd: docker tag mysql "{{ acr_name }}.azurecr.io/mysql:casopractico2"
+        # Similar a la tarea anterior, esta etiqueta la imagen de MySQL con el tag 'casopractico2' para ser empujada al ACR.

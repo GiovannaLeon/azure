@@ -1,0 +1,58 @@
+# wordpress-deployment.yml
+# Autor: Giovanna Leon 
+# ============================================
+# Deployment y Service para WordPress
+# ============================================
+# Este archivo despliega la aplicación WordPress en Kubernetes. 
+# Define un Deployment con una réplica del contenedor de WordPress, 
+# configurando el acceso a la base de datos MySQL y un volumen persistente 
+# para almacenar los archivos de WordPress. Además, crea un Service de 
+# tipo LoadBalancer para exponer WordPress públicamente a través del puerto 8080.
+# ============================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wordpress
+  template:
+    metadata:
+      labels:
+        app: wordpress
+    spec:
+      containers:
+        - name: wordpress
+          image: "{{ acr_name }}.azurecr.io/wordpress:casopractico2"
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - mountPath: /var/www/html  # Directorio donde WordPress guarda sus archivos
+              name: wordpress-storage  # Nombre del volumen
+          env:
+            - name: WORDPRESS_DB_HOST
+              value: "mysql-service"
+            - name: WORDPRESS_DB_NAME
+              value: "wordpress_db"
+            - name: WORDPRESS_DB_USER
+              value: "wordpress_user"
+            - name: WORDPRESS_DB_PASSWORD
+              value: "wordpress_password"
+      volumes:
+        - name: wordpress-storage
+          persistentVolumeClaim:
+            claimName: wordpress-pvc  # Usar el PVC creado
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress-service
+spec:
+  selector:
+    app: wordpress
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: LoadBalancer  # Exponer WordPress a través de un LoadBalancer

@@ -1,0 +1,20 @@
+# wordpress-pvc.yml
+# ============================================
+# PersistentVolumeClaim (PVC) para WordPress
+# ============================================
+# Este YAML crea un PersistentVolumeClaim (PVC) para solicitar
+# almacenamiento de 5Gi para la aplicación WordPress.
+# El volumen tendrá acceso "ReadWriteOnce" y usará la clase
+# de almacenamiento "default".
+# ============================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wordpress-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi  # El tamaño de almacenamiento solicitado
+  storageClassName: default

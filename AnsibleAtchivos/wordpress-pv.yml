@@ -1,0 +1,20 @@
+###########################################################
+# wordpress-pv.yml
+# Autor; Giovanna Leon
+# Este YAML crea un PersistentVolume de 5Gi para almacenar
+# datos persistentes de WordPress en el nodo, con acceso 
+# "ReadWriteOnce" y retención de datos al eliminar el PVC.
+############################################################
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: wordpress-pv
+spec:
+  capacity:
+    storage: 5Gi  # El tamaño del volumen persistente
+  accessModes:
+    - ReadWriteOnce  # El volumen solo será montado en un nodo a la vez
+  persistentVolumeReclaimPolicy: Retain  # Los datos no se eliminarán al eliminar el PVC
+  storageClassName: default
+  hostPath:
+    path: /mnt/data/wordpress  # El camino donde se almacenarán los datos de WordPress en el nodo

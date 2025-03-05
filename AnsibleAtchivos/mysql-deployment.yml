@@ -1,0 +1,59 @@
+# mysql-deployment.yml
+# Autor: Giovanna Leon 
+# ============================================
+# Deployment y Service para MySQL
+# ============================================
+# Este archivo despliega la aplicación MySQL en Kubernetes. 
+# Define un Deployment con una réplica del contenedor MySQL, 
+# configurando las credenciales de acceso y un volumen persistente 
+# para almacenar los datos de MySQL. Además, crea un Service de 
+# tipo ClusterIP para que MySQL sea accesible dentro del clúster 
+# de Kubernetes a través del puerto 3306.
+# ============================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: "{{ acr_name }}.azurecr.io/mysql:casopractico2"  # Imagen de MySQL en ACR
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - mountPath: /var/lib/mysql  # Directorio donde MySQL guarda sus datos
+              name: mysql-storage  # Nombre del volumen
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: "mysql_root_password"
+            - name: MYSQL_DATABASE
+              value: "wordpress_db"
+            - name: MYSQL_USER
+              value: "wordpress_user"
+            - name: MYSQL_PASSWORD
+              value: "wordpress_password"
+      volumes:
+        - name: mysql-storage
+          persistentVolumeClaim:
+            claimName: mysql-pvc  # Usar el PVC creado
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-service
+spec:
+  selector:
+    app: mysql
+  ports:
+    - port: 3306
+      targetPort: 3306
+  clusterIP: None
